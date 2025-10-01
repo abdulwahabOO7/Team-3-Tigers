@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Team Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutral Harmony -->
+    <!-- Application Structure Plan: The SPA is structured into three thematic sections: 'The Team', 'Our Mission', and 'How We Work', accessed via a sticky navigation bar. This thematic organization replaces the linear slide format to allow users to quickly find relevant information. The core interaction is in 'The Team' section, where users click on member cards to view detailed information (including a skill visualization) in a modal pop-up, keeping the initial interface clean and focused. This design prioritizes user-driven exploration and intuitive information grouping over a passive, sequential presentation. -->
+    <!-- Visualization & Content Choices: 1. Team Members: Report info (Name, Role, Skills) -> Goal (Introduce team) -> Viz (Interactive cards + Modal with Radar Chart) -> Interaction (Click to reveal details & skill chart) -> Justification (Manages information density, provides engaging visual skill comparison) -> Library (Chart.js for radar chart). 2. Team Goals: Report info (Goal list) -> Goal (Inform purpose) -> Viz (Styled list with icons) -> Interaction (None) -> Justification (Clear and direct communication). 3. Collaboration Info: Report info (Tools, meetings) -> Goal (Organize operational details) -> Viz (Grouped lists with icons) -> Interaction (None) -> Justification (Enhances scannability). All visual diagrams like flowcharts or hierarchies are built using structured HTML/Tailwind. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FBFBF8;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 300px;
+        }
+    </style>
+</head>
+<body class="text-stone-800 antialiased">
+
+    <header class="bg-stone-100/80 backdrop-blur-sm sticky top-0 z-40 shadow-sm">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <h1 id="headerTitle" class="text-2xl font-bold text-teal-800">Project Team Dashboard</h1>
+                <nav class="hidden md:flex space-x-8">
+                    <a href="#team" class="font-medium text-stone-600 hover:text-teal-700 transition-colors">The Team</a>
+                    <a href="#mission" class="font-medium text-stone-600 hover:text-teal-700 transition-colors">Our Mission</a>
+                    <a href="#workflow" class="font-medium text-stone-600 hover:text-teal-700 transition-colors">How We Work</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        
+        <section id="team" class="mb-16 scroll-mt-20">
+            <div class="text-center mb-10">
+                <h2 class="text-3xl md:text-4xl font-bold text-stone-900">Meet the Team</h2>
+            </div>
+            <div id="team-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            </div>
+        </section>
+
+        <section id="mission" class="mb-16 scroll-mt-20">
+            <div class="text-center mb-10">
+                <h2 class="text-3xl md:text-4xl font-bold text-stone-900">Our Mission</h2>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-8 grid grid-cols-1 lg:grid-cols-2 gap-12">
+                <div>
+                    <h3 class="text-2xl font-semibold text-teal-800 mb-4">Our Core Objective</h3>
+                    <p id="primaryObjective" class="text-stone-700 text-lg leading-relaxed"></p>
+                    <h3 class="text-2xl font-semibold text-teal-800 mt-8 mb-4">Key Goals</h3>
+                    <ul id="goalsList" class="space-y-3"></ul>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-semibold text-teal-800 mb-4">Roles & Responsibilities</h3>
+                    <div id="rolesList" class="space-y-4"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="workflow" class="scroll-mt-20">
+            <div class="text-center mb-10">
+                <h2 class="text-3xl md:text-4xl font-bold text-stone-900">How We Work</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-semibold text-teal-800 mb-4">Communication</h3>
+                    <div id="commChannels" class="space-y-3"></div>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-semibold text-teal-800 mb-4">Collaboration</h3>
+                    <div id="collaboration" class="space-y-3"></div>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-semibold text-teal-800 mb-4">Development Practices</h3>
+                    <div id="devPractices" class="space-y-3"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="memberModal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-50 p-4 transition-opacity duration-300">
+        <div id="modalContent" class="bg-stone-50 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto transform scale-95 transition-transform duration-300">
+            <div class="p-6 md:p-8">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h2 id="modalName" class="text-3xl font-bold text-teal-800"></h2>
+                        <p id="modalRole" class="text-lg text-stone-600 mt-1"></p>
+                    </div>
+                    <button id="closeModal" class="text-3xl leading-none font-bold text-stone-500 hover:text-stone-800">&times;</button>
+                </div>
+                <div class="mt-6 border-t pt-6 grid grid-cols-1 lg:grid-cols-5 gap-8">
+                    <div class="lg:col-span-3 space-y-6">
+                        <div>
+                            <h3 class="text-xl font-semibold mb-2 text-stone-800">Background</h3>
+                            <p id="modalBackground" class="text-stone-700"></p>
+                        </div>
+                         <div>
+                            <h3 class="text-xl font-semibold mb-2 text-stone-800">Key Roles</h3>
+                            <ul id="modalKeyRoles" class="list-disc list-inside text-stone-700 space-y-1"></ul>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-semibold mb-2 text-stone-800">Experience</h3>
+                            <div id="modalExperience" class="space-y-4"></div>
+                        </div>
+                        <div id="challengeContainer">
+                             <h3 class="text-xl font-semibold mb-2 text-stone-800">Challenge & Solution</h3>
+                             <div class="border-l-4 border-teal-700 pl-4">
+                                <p class="font-semibold text-stone-700">Challenge: <span id="modalChallenge" class="font-normal"></span></p>
+                                <p class="mt-2 font-semibold text-stone-700">Solution: <span id="modalSolution" class="font-normal"></span></p>
+                             </div>
+                        </div>
+                        <div id="growthGoalsContainer">
+                            <h3 class="text-xl font-semibold mb-2 text-stone-800">Growth & Learning Goals</h3>
+                            <ul id="modalGrowthGoals" class="list-disc list-inside text-stone-700 space-y-1"></ul>
+                        </div>
+                        <div id="recommendationsContainer">
+                            <h3 class="text-xl font-semibold mb-2 text-stone-800">Recommendations</h3>
+                            <ul id="modalRecommendations" class="list-disc list-inside text-stone-700 space-y-1"></ul>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-2">
+                        <h3 class="text-xl font-semibold mb-2 text-stone-800 text-center">Key Skills</h3>
+                        <div class="chart-container">
+                            <canvas id="skillChart"></canvas>
+                        </div>
+                        <div id="detailedSkillsContainer" class="mt-6">
+                            <h3 class="text-xl font-semibold mb-2 text-stone-800">Technical Expertise</h3>
+                            <p id="modalDetailedSkills" class="text-sm text-stone-600"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const appData = {
+            projectName: "Team 3 Tigers",
+            team: [
+                {
+                    name: "Abu Huraira",
+                    role: "Software Engineer",
+                    module: "Training",
+                    background: "4+ years of experience in full-stack web development using .NET (C#) for backend and Angular (JS-10) for frontend. Experience in building enterprise applications with layered architecture (Domain, Application, DAL).",
+                    keyRoles: [
+                        "Designed and implemented training management modules",
+                        "PDF building library integration",
+                        "Helping out team regarding home inspection/appointment/RAT modules issues",
+                        "Managing team after TL",
+                        "Code Review"
+                    ],
+                    experience: [
+                        { title: "Software Engineer", company: "ICM", duration: "2021 - Present" },
+                        { title: "Junior Developer", company: "CodeCrafters Inc.", duration: "2019 - 2021" }
+                    ],
+                    skills: ['.NET', 'Angular', 'SQL', 'Architecture', 'C#'],
+                    skillValues: [95, 90, 85, 92, 95],
+                    detailedSkills: ".NET Core, C#, Entity Framework Core, SQL Server (query optimization & indexing), Angular, JavaScript, Clean Architecture, DDD principles, Repository & Unit of Work patterns, Ardalis Specification, API design.",
+                    growthGoals: [
+                        "Deepen expertise in cloud deployment (Azure, AWS) and AI integration into enterprise apps.",
+                        "Strengthen backend scalability skills (microservices, distributed systems).",
+                        "Improve leadership and architectural decision-making for future solution architect / team lead role."
+                    ]
+                },
+                {
+                    name: "Shahid Abas",
+                    role: "Software Engineer",
+                    module: "eMAR",
+                    background: "With 3+ years of experience, I am a Software Engineer specializing in .NET and Angular. I have contributed to key modules like Training Management and eMAR, focusing on problem-solving, secure coding, and system optimization.",
+                    keyRoles: ["Problem-solving", "Secure coding practices", "System optimization", "Teamwork & collaboration"],
+                     experience: [
+                        { title: "Software Engineer", company: "ICM", duration: "2022 - Present" },
+                        { title: "Software Engineer", company: "Arham Soft", duration: "2020 - 2022" }
+                    ],
+                    skills: [".NET Core", "Angular", "SQL Server", "Clean Architecture", "Problem Solving"],
+                    skillValues: [92, 88, 85, 90, 95],
+                    detailedSkills: ".NET Core, ASP.NET MVC, Angular, SQL Server, Clean Architecture",
+                    growthGoals: [
+                        "Focus on technical excellence in modern .NET, Angular, and optimized SQL.",
+                        "Gain deep domain expertise in HL7 and eMAR workflows.",
+                        "Pursue architectural growth through microservices, cloud, and DevOps.",
+                        "Strengthen leadership and communication to align technology with business needs."
+                    ],
+                    challenge: "Managing technical debt in legacy modules.",
+                    solution: "Applied Specification Pattern & Clean Architecture refactoring to improve maintainability and scalability."
+                },
+                {
+                    name: "Mughees Khan",
+                    role: "Software Engineer",
+                    module: "Training",
+                    background: "Currently working on the Training Management Module. Previously, I worked as a Software Developer at the Punjab Healthcare Commission from Jan 2022 to Jun 2025, where I built public-facing and internal modules using Angular 13, ASP.NET Core, and MSSQL.",
+                    keyRoles: ["Training Management Module Development", "Full-Stack Feature Implementation", "Collaborating with teams to deliver high-quality solutions"],
+                     experience: [
+                        { title: "Software Engineer", company: "ICM", duration: "June 2025 - Present" },
+                         { title: "Software Developer", company: "Punjab Healthcare Commission", duration: "Jan 2022 - Jun 2025" }
+                    ],
+                    skills: ["Angular", ".NET Core", "MSSQL", "Collaboration", "Problem Solving"],
+                    skillValues: [90, 90, 85, 92, 88],
+                    detailedSkills: "Key Technologies: Angular, ASP.NET Core, MSSQL",
+                    growthGoals: [],
+                    recommendations: [
+                        "Faster Onboarding: Structured Module Training for new joiners.",
+                        "Knowledge Sharing: Quarterly Team/Module Rotation to reduce dependency on individuals.",
+                        "Strategic Alignment: Assign measurable objectives to drive Plan 2025."
+                    ]
+                },
+                {
+                    name: "Abdul Wahab",
+                    role: "Associate Software Engineer",
+                    module: "eMAR",
+                    background: "My journey began at NETSOL, where I was first hired as an intern. After successfully completing my internship, I was offered a full-time role as a Full Stack Developer, and I worked there for one year. Currently, I’m working as an Associate Software Engineer at ICM. My core expertise lies in .NET, C#, and Angular, and I’m passionate about building end-to-end solutions while continuously learning new technologies.",
+                    keyRoles: [
+                        "Full-stack development (.NET, C#, Angular)",
+                        "API and database handling",
+                        "Feature development and bug fixing",
+                        "Team collaboration and continuous learning"
+                    ],
+                     experience: [
+                        { title: "Associate Software Engineer", company: "ICM", duration: "July 2025 - Present" },
+                        { title: "Associate Full Stack Developer", company: "Netsol", duration: "Nov 2024 - July 2025" },
+                        { title: "Full Stack Development Intern", company: "Netsol", duration: "July 2024 - Oct 2024" }
+                    ],
+                    skills: [".NET", "C#", "Angular", "TypeScript", "SQL"],
+                    skillValues: [90, 90, 90, 90, 90],
+                    detailedSkills: "",
+                    growthGoals: [
+                        "Explore and integrate basic Machine Learning (ML) models into .NET applications.",
+                        "Learn Python for data analysis and AI/ML development.",
+                        "Gain experience with cloud-based AI services like Azure AI or AWS SageMaker."
+                    ]
+                }
+            ],
+            mission: {
+                primaryObjective: "To enhance and stabilize the Training Management and eMAR modules, ensuring they meet enterprise standards for performance, scalability, and user experience.",
+                goals: [
+                    "Successfully refactor core components of the Training Management module to improve performance.",
+                    "Resolve all critical bugs in the eMAR module and achieve high uptime.",
+                    "Deliver new feature sets for both modules."
+                ]
+            },
+            workflow: {
+                communication: [
+                    { type: "Daily Check-ins", description: "We start each day with a brief stand-up to align on tasks and resolve blockers." },
+                    { type: "Open Dialogue", description: "We maintain open channels for immediate questions and real-time problem-solving." }
+                ],
+                collaboration: [
+                    { type: "Teamwork", description: "We work closely together, sharing knowledge and supporting each other to meet collective goals." },
+                    { type: "Code Collaboration", description: "We use version control and conduct peer reviews to ensure code quality and consistency." },
+                    { type: "Shared Knowledge", description: "We maintain a central repository for all project documentation and resources." }
+                ],
+                devPractices: [
+                    "All pull requests require at least one peer review.",
+                    "Adherence to .NET and Angular coding standards.",
+                    "Unit testing for all new logic and bug fixes."
+                ]
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('headerTitle').textContent = appData.projectName;
+            const teamGrid = document.getElementById('team-grid');
+            const primaryObjectiveEl = document.getElementById('primaryObjective');
+            const goalsListEl = document.getElementById('goalsList');
+            const rolesListEl = document.getElementById('rolesList');
+            const commChannelsEl = document.getElementById('commChannels');
+            const collaborationEl = document.getElementById('collaboration');
+            const devPracticesEl = document.getElementById('devPractices');
+            let skillChartInstance = null;
+            
+            appData.team.forEach((member, index) => {
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-xl shadow-md p-6 text-center hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer";
+                card.dataset.memberIndex = index;
+                card.innerHTML = `
+                    <div class="w-24 h-24 rounded-full bg-teal-100 mx-auto mb-4 flex items-center justify-center text-teal-600 text-4xl font-bold">${member.name.split(' ').map(n=>n[0]).join('')}</div>
+                    <h3 class="text-xl font-semibold text-stone-900">${member.name}</h3>
+                    <p class="text-stone-500">${member.role}</p>
+                `;
+                teamGrid.appendChild(card);
+
+                const roleItem = document.createElement('div');
+                roleItem.innerHTML = `<p><strong class="font-semibold text-stone-800">${member.name}:</strong> <span class="text-stone-600">Responsible for the ${member.module} module.</span></p>`;
+                rolesListEl.appendChild(roleItem);
+            });
+
+            primaryObjectiveEl.textContent = appData.mission.primaryObjective;
+
+            appData.mission.goals.forEach(goal => {
+                const li = document.createElement('li');
+                li.className = "flex items-start";
+                li.innerHTML = `<span class="text-teal-500 mr-3 mt-1">&#10004;</span><span class="text-stone-600">${goal}</span>`;
+                goalsListEl.appendChild(li);
+            });
+            
+            appData.workflow.communication.forEach(comm => {
+                 const p = document.createElement('p');
+                 p.innerHTML = `<strong class="font-medium text-stone-800">${comm.type}:</strong> <span class="text-stone-600">${comm.description}</span>`;
+                 commChannelsEl.appendChild(p);
+            });
+            
+            appData.workflow.collaboration.forEach(collab => {
+                 const p = document.createElement('p');
+                 p.innerHTML = `<strong class="font-medium text-stone-800">${collab.type}:</strong> <span class="text-stone-600">${collab.description}</span>`;
+                 collaborationEl.appendChild(p);
+            });
+
+            appData.workflow.devPractices.forEach(practice => {
+                const p = document.createElement('p');
+                p.className = "text-stone-600";
+                p.textContent = practice;
+                devPracticesEl.appendChild(p);
+            });
+            
+            const modal = document.getElementById('memberModal');
+            const modalContent = document.getElementById('modalContent');
+            const closeModal = document.getElementById('closeModal');
+            
+            teamGrid.addEventListener('click', (e) => {
+                const card = e.target.closest('[data-member-index]');
+                if (card) {
+                    const memberIndex = card.dataset.memberIndex;
+                    const member = appData.team[memberIndex];
+                    
+                    document.getElementById('modalName').textContent = member.name;
+                    document.getElementById('modalRole').textContent = member.role;
+                    document.getElementById('modalBackground').textContent = member.background;
+
+                    const keyRolesEl = document.getElementById('modalKeyRoles');
+                    keyRolesEl.innerHTML = '';
+                    member.keyRoles.forEach(role => {
+                        const li = document.createElement('li');
+                        li.textContent = role;
+                        keyRolesEl.appendChild(li);
+                    });
+
+                    const experienceEl = document.getElementById('modalExperience');
+                    experienceEl.innerHTML = '';
+                    member.experience.forEach(exp => {
+                        const div = document.createElement('div');
+                        div.innerHTML = `
+                            <p class="font-semibold text-stone-800">${exp.title} - ${exp.company}</p>
+                            <p class="text-sm text-stone-500">${exp.duration}</p>
+                        `;
+                        experienceEl.appendChild(div);
+                    });
+
+                    const challengeContainer = document.getElementById('challengeContainer');
+                    if (member.challenge && member.solution) {
+                        document.getElementById('modalChallenge').textContent = member.challenge;
+                        document.getElementById('modalSolution').textContent = member.solution;
+                        challengeContainer.style.display = 'block';
+                    } else {
+                        challengeContainer.style.display = 'none';
+                    }
+
+                    const growthGoalsEl = document.getElementById('modalGrowthGoals');
+                    const growthGoalsContainer = document.getElementById('growthGoalsContainer');
+                    growthGoalsEl.innerHTML = '';
+                    if (member.growthGoals && member.growthGoals.length > 0) {
+                        member.growthGoals.forEach(goal => {
+                            const li = document.createElement('li');
+                            li.textContent = goal;
+                            growthGoalsEl.appendChild(li);
+                        });
+                        growthGoalsContainer.style.display = 'block';
+                    } else {
+                        growthGoalsContainer.style.display = 'none';
+                    }
+
+                    const recommendationsEl = document.getElementById('modalRecommendations');
+                    const recommendationsContainer = document.getElementById('recommendationsContainer');
+                    recommendationsEl.innerHTML = '';
+                     if (member.recommendations && member.recommendations.length > 0) {
+                        member.recommendations.forEach(rec => {
+                            const li = document.createElement('li');
+                            li.textContent = rec;
+                            recommendationsEl.appendChild(li);
+                        });
+                        recommendationsContainer.style.display = 'block';
+                    } else {
+                        recommendationsContainer.style.display = 'none';
+                    }
+
+                    const detailedSkillsEl = document.getElementById('modalDetailedSkills');
+                    const detailedSkillsContainer = document.getElementById('detailedSkillsContainer');
+                    if (member.detailedSkills) {
+                        detailedSkillsEl.textContent = member.detailedSkills;
+                        detailedSkillsContainer.style.display = 'block';
+                    } else {
+                        detailedSkillsContainer.style.display = 'none';
+                    }
+                    
+                    const ctx = document.getElementById('skillChart').getContext('2d');
+                    
+                    if (skillChartInstance) {
+                        skillChartInstance.destroy();
+                    }
+                    
+                    skillChartInstance = new Chart(ctx, {
+                        type: 'radar',
+                        data: {
+                            labels: member.skills,
+                            datasets: [{
+                                label: 'Skill Proficiency',
+                                data: member.skillValues,
+                                backgroundColor: 'rgba(20, 137, 142, 0.2)',
+                                borderColor: 'rgb(15, 118, 122)',
+                                borderWidth: 2,
+                                pointBackgroundColor: 'rgb(15, 118, 122)',
+                                pointBorderColor: '#fff',
+                                pointHoverBackgroundColor: '#fff',
+                                pointHoverBorderColor: 'rgb(15, 118, 122)'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                             scales: {
+                                r: {
+                                    angleLines: {
+                                        color: 'rgba(0, 0, 0, 0.1)'
+                                    },
+                                    grid: {
+                                        color: 'rgba(0, 0, 0, 0.1)'
+                                    },
+                                    pointLabels: {
+                                        font: {
+                                            size: 12
+                                        },
+                                        color: '#333'
+                                    },
+                                    ticks: {
+                                        backdropColor: 'transparent',
+                                        stepSize: 25,
+                                        beginAtZero: true,
+                                        max: 100
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            }
+                        }
+                    });
+
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                    setTimeout(() => {
+                        modal.style.opacity = 1;
+                        modalContent.classList.remove('scale-95');
+                    }, 10);
+                }
+            });
+            
+            const hideModal = () => {
+                modal.style.opacity = 0;
+                modalContent.classList.add('scale-95');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                }, 300);
+            };
+
+            closeModal.addEventListener('click', hideModal);
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    hideModal();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
